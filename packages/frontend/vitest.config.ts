@@ -6,8 +6,13 @@
 //-----------------------------------------------------------------------
 
 import react from '@vitejs/plugin-react-swc';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import { resolve } from 'path';
+
+export const optionalSpecs = [
+  'src/components/customer-settings-form.spec.tsx',
+  'src/hooks/use-semantic-model-query.spec.ts',
+];
 
 export default defineConfig({
   plugins: [
@@ -23,20 +28,9 @@ export default defineConfig({
     setupFiles: ['src/test/setup.ts'],
     globals: true,
     testTimeout: 15_000,
-    /**
-     * Only the app's own specs. The template also ships `scripts/*.test.mjs`,
-     * which are run by `node --test` and are not vitest suites, so without
-     * this `npm test` collects them and fails on "No test suite found".
-     */
     include: ['src/**/*.spec.{ts,tsx}'],
-    /**
-     * `npm test` is part of the deployment gate, and an app that has not
-     * written a spec yet is not a broken app. Without this, vitest exits
-     * non-zero on "No test files found" and validation reports a failure the
-     * builder cannot act on -- while a real failing spec still blocks, which
-     * is the part that matters.
-     */
-    passWithNoTests: true,
+    exclude: [...configDefaults.exclude, ...optionalSpecs],
+    passWithNoTests: false,
   },
   resolve: {
     alias: { '@': resolve(import.meta.dirname, 'src') },

@@ -74,6 +74,7 @@ describe('delegated Fabric discovery', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   it('uses the installation tenant and secretless SPA without persisting source tokens', async () => {
@@ -350,5 +351,49 @@ describe('delegated Fabric discovery', () => {
     normalize.mockReturnValueOnce({ status: 'error', error: { message: 'Linguistic metadata permission required.' } });
     const client = await connected();
     await expect(client.scanAIInstructions(target, signal())).rejects.toThrow('Linguistic metadata permission required.');
+  });
+
+  describe('DAX HTTP authentication', () => {
+    beforeEach(async () => {
+      const sdk = await vi.importActual<typeof import('@microsoft/rayfin-connector-fabric-semanticmodel')>(
+        '@microsoft/rayfin-connector-fabric-semanticmodel',
+      );
+      execute.mockImplementation(sdk.executeDaxDirect);
+      vi.stubGlobal('fetch', vi.fn(() => {
+        throw new Error('DAX tests must use the injected HTTP transport, not native network access.');
+      }));
+    });
+
+    it('preserves a reconnect error when the real SDK envelopes an HTTP 401', async () => {
+      request.mockResolvedValueOnce(reply({}, 401));
+      const client = await connected();
+
+      await expect(client.scan(target, signal())).rejects.toBeInstanceOf(FabricReadAccessError);
+
+      expect(request).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+        method: 'POST',
+        url: `https://api.powerbi.com/v1.0/myorg/datasets/${modelId}/executeDaxQueries`,
+        headers: expect.objectContaining({ authorization: 'Bearer delegated-test-token' }),
+      }));
+      expect(normalize).not.toHaveBeenCalled();
+    });
+
+    it('rejects an in-flight DAX response after the source account changes', async () => {
+      let finishRequest!: (response: ReturnType<typeof reply>) => void;
+      request.mockImplementationOnce(() => new Promise((resolve) => { finishRequest = resolve; }));
+      const client = await connected();
+      const pending = expect(client.scan(target, signal())).rejects.toBeInstanceOf(FabricReadAccessError);
+      await vi.waitFor(() => expect(request).toHaveBeenCalledOnce());
+
+      auth.acquireTokenPopup.mockResolvedValueOnce({
+        account: { ...account, homeAccountId: 'account-b', username: 'other@example.invalid' },
+        tenantId: state.tenant,
+      });
+      await client.connect();
+      finishRequest(reply({}));
+
+      await pending;
+      expect(normalize).not.toHaveBeenCalled();
+    });
   });
 });

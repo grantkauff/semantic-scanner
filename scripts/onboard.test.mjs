@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
+import { delimiter, dirname, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { stringify } from 'yaml';
@@ -20,12 +21,14 @@ const settings = {
   workspaceId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
 };
 const itemName = 'semantic-scanner';
+const sourceRoot = fileURLToPath(new URL('../', import.meta.url));
+const require = createRequire(import.meta.url);
 
-function npmCommand(script, ...args) {
+function npmCommand(project, script, ...args) {
   assert.ok(process.env.npm_execpath, 'Run command-contract tests through npm run test:onboarding.');
   const result = spawnSync(process.execPath, [process.env.npm_execpath, 'run', script, '--', ...args], {
-    cwd: fileURLToPath(new URL('../', import.meta.url)),
-    env: { ...process.env, RAYFIN_TELEMETRY_OPTOUT: '1' },
+    cwd: project.root,
+    env: project.env,
     encoding: 'utf8',
     timeout: 30_000,
   });
@@ -55,6 +58,80 @@ function fixture(t) {
   }
   saveScannerSettings(root, settings);
   return { root, config };
+}
+
+function commandFixture(t) {
+  assert.ok(process.env.npm_execpath, 'Run command-contract tests through npm run test:onboarding.');
+  const { root } = fixture(t);
+  const bin = resolve(root, 'node_modules', '.bin');
+  const home = resolve(root, 'home');
+  const temporary = resolve(root, 'tmp');
+  const cliRoot = resolve(root, 'node_modules', '@microsoft', 'rayfin-cli');
+  for (const directory of [bin, home, temporary, cliRoot, resolve(root, 'scripts')]) {
+    mkdirSync(directory, { recursive: true });
+  }
+  copyFileSync(resolve(sourceRoot, 'package.json'), resolve(root, 'package.json'));
+  for (const workspace of ['frontend', 'data', 'shared']) {
+    const destination = resolve(root, 'packages', workspace);
+    mkdirSync(destination, { recursive: true });
+    copyFileSync(resolve(sourceRoot, 'packages', workspace, 'package.json'), resolve(destination, 'package.json'));
+  }
+  for (const file of ['onboard.mjs', 'scanner-config.mjs']) {
+    copyFileSync(resolve(sourceRoot, 'scripts', file), resolve(root, 'scripts', file));
+  }
+  cpSync(dirname(require.resolve('yaml/package.json')), resolve(root, 'node_modules', 'yaml'), { recursive: true });
+
+  const callsFile = resolve(root, 'commands.jsonl');
+  writeFileSync(callsFile, '');
+  function executable(name, entry) {
+    const command = [process.execPath, entry].map((value) => `"${value}"`).join(' ');
+    const shellCommand = [process.execPath, entry]
+      .map((value) => `'${value.replaceAll("'", "'\\''")}'`).join(' ');
+    writeFileSync(resolve(bin, `${name}.cmd`), `@echo off\r\n${command} %*\r\n`);
+    writeFileSync(resolve(bin, name), `#!/bin/sh\nexec ${shellCommand} "$@"\n`, { mode: 0o755 });
+  }
+
+  const cliEntry = resolve(cliRoot, 'cli.mjs');
+  for (const [command, entry] of [['vite', resolve(bin, 'vite.mjs')], ['rayfin', cliEntry]]) {
+    writeFileSync(entry, `import { appendFileSync } from 'node:fs';
+const args = process.argv.slice(2);
+const command = ${JSON.stringify(command)};
+appendFileSync(${JSON.stringify(callsFile)}, JSON.stringify({ command, args }) + '\\n');
+if (command !== 'vite' || args.length !== 1 || args[0] !== '--help') {
+  console.error('Blocked external command in onboarding fixture: ' + command + ' ' + args.join(' '));
+  process.exitCode = 1;
+}
+`);
+    executable(command, entry);
+  }
+  const manifest = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
+  writeFileSync(resolve(cliRoot, 'package.json'), JSON.stringify({
+    name: '@microsoft/rayfin-cli', version: manifest.devDependencies['@microsoft/rayfin-cli'],
+    type: 'module', bin: { rayfin: 'cli.mjs' },
+  }));
+  executable('npm', process.env.npm_execpath);
+
+  const userConfig = resolve(root, 'user.npmrc');
+  const globalConfig = resolve(root, 'global.npmrc');
+  writeFileSync(userConfig, '');
+  writeFileSync(globalConfig, '');
+  return {
+    root,
+    calls: () => readFileSync(callsFile, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line)),
+    env: {
+      ...Object.fromEntries(['SystemRoot', 'WINDIR', 'ComSpec', 'PATHEXT', 'LANG', 'LC_ALL']
+        .filter((name) => process.env[name] !== undefined).map((name) => [name, process.env[name]])),
+      PATH: [bin, dirname(process.execPath), process.env.PATH].filter(Boolean).join(delimiter),
+      HOME: home, USERPROFILE: home,
+      APPDATA: resolve(home, 'Roaming'), LOCALAPPDATA: resolve(home, 'Local'),
+      TEMP: temporary, TMP: temporary, TMPDIR: temporary,
+      npm_config_userconfig: userConfig, npm_config_globalconfig: globalConfig,
+      npm_config_cache: resolve(root, 'cache'), npm_config_offline: 'true',
+      npm_config_update_notifier: 'false', npm_config_audit: 'false', npm_config_fund: 'false',
+      npm_config_script_shell: process.platform === 'win32' ? process.env.ComSpec ?? 'cmd.exe' : '/bin/sh',
+      RAYFIN_TELEMETRY_OPTOUT: '1', NO_COLOR: '1',
+    },
+  };
 }
 
 function preview() {
@@ -118,11 +195,12 @@ test('supplying all setup IDs can repair malformed local configuration without r
   assert.deepEqual(readScannerSettings(root), settings);
 });
 
-test('unsupported Node runtimes cannot start onboarding', () => {
-  assert.doesNotThrow(() => assertSupportedNode('24.0.0'));
-  assert.doesNotThrow(() => assertSupportedNode('22.13.0'));
-  for (const version of ['22.12.0', '25.0.0', '26.0.0']) {
-    assert.throws(() => assertSupportedNode(version), /matching npm/);
+test('only Node 24 runtimes can start onboarding', () => {
+  for (const version of ['24.0.0', '24.13.0']) {
+    assert.doesNotThrow(() => assertSupportedNode(version));
+  }
+  for (const version of ['22.12.0', '22.13.0', '23.0.0', '25.0.0', '26.0.0']) {
+    assert.throws(() => assertSupportedNode(version), /Node\.js 24\.x with its matching npm/);
   }
 });
 
@@ -217,25 +295,48 @@ test('a mismatched remote target cannot print a successful readiness check', () 
   assert.deepEqual(logs, []);
 });
 
-test('the default development command forwards options to Vite without a Fabric backend session', () => {
-  const result = npmCommand('dev', '--help');
+test('the default development command forwards options to Vite without a Fabric backend session', (t) => {
+  const project = commandFixture(t);
+  const result = npmCommand(project, 'dev', '--help');
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  assert.match(result.stdout, /vite\/\d/);
-  assert.match(result.stdout, /--host/);
+  assert.deepEqual(project.calls(), [{ command: 'vite', args: ['--help'] }]);
 });
 
-test('the legacy deployment alias reaches guarded scanner setup rather than raw remote deployment', () => {
-  const result = npmCommand('rayfin:up', '--help');
+test('the legacy deployment alias reaches guarded scanner setup rather than raw remote deployment', (t) => {
+  const project = commandFixture(t);
+  const result = npmCommand(project, 'rayfin:up', '--help');
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /Semantic scanner setup/);
   assert.match(result.stdout, /Never supply a client secret or access token/);
+  assert.deepEqual(project.calls(), []);
 });
 
-test('noninteractive deployment stops before configuration, validation, or remote access', () => {
-  const result = npmCommand('deploy');
+test('noninteractive deployment stops before configuration, validation, or remote access', (t) => {
+  const project = commandFixture(t);
+  rmSync(resolve(project.root, 'rayfin', 'rayfin.yml'));
+  rmSync(resolve(project.root, scannerConfigFile));
+  const result = npmCommand(project, 'deploy');
   assert.equal(result.status, 1, result.stderr || result.stdout);
   assert.match(result.stderr, /interactive terminal for exact workspace confirmation/);
   assert.doesNotMatch(result.stdout, /CHECKED:|Workspace:|Hosting URL:/);
+  assert.deepEqual(project.calls(), []);
+});
+
+test('command fixtures trap raw and entrypoint CLI routes without accessing a real deployment', (t) => {
+  for (const script of ['rayfin up', 'node scripts/onboard.mjs preview']) {
+    const project = commandFixture(t);
+    const manifestFile = resolve(project.root, 'package.json');
+    const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
+    manifest.scripts['rayfin:up'] = script;
+    writeFileSync(manifestFile, JSON.stringify(manifest));
+
+    const result = npmCommand(project, 'rayfin:up');
+    assert.equal(result.status, 1, result.stderr || result.stdout);
+    assert.match(result.stderr, /Blocked external command in onboarding fixture: rayfin up/);
+    assert.equal(project.calls().length, 1);
+    assert.equal(project.calls()[0].command, 'rayfin');
+    assert.equal(project.calls()[0].args[0], 'up');
+  }
 });
 
 test('failed static validation prevents deployment even after target approval', async (t) => {

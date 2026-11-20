@@ -107,13 +107,6 @@ describe('bootstrapAuth with incomplete configuration', () => {
 
   // `rayfin dev` against the local backend: Rayfin values, no Fabric item yet.
   describe('before the first deploy', () => {
-    it('does not reject, so the app still mounts', async () => {
-      stubEnv(RAYFIN_ONLY);
-      stubMissingRuntimeConfig();
-
-      await expect(bootstrap()).resolves.toBeDefined();
-    });
-
     it('reports that the app has not been deployed', async () => {
       stubEnv(RAYFIN_ONLY);
       stubMissingRuntimeConfig();
@@ -139,13 +132,6 @@ describe('bootstrapAuth with incomplete configuration', () => {
       ...FULLY_CONFIGURED,
       VITE_RAYFIN_PUBLISHABLE_KEY: '',
     };
-
-    it('does not reject, so the app still mounts', async () => {
-      stubEnv(FABRIC_WITHOUT_KEY);
-      stubMissingRuntimeConfig();
-
-      await expect(bootstrap()).resolves.toBeDefined();
-    });
 
     it('names the missing field rather than reporting not-deployed', async () => {
       stubEnv(FABRIC_WITHOUT_KEY);

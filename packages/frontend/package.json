@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:optional": "vitest run --config vitest.optional.config.ts",
     "test:watch": "vitest"
   },
   "dependencies": {

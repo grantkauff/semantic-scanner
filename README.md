@@ -20,9 +20,9 @@ save scan history, export results, or certify Copilot readiness. See the
 
 The person installing needs:
 
-- **Node.js 24 and its matching npm**, recommended by
-  [.node-version](./.node-version). Node.js 22.13+ within 22.x is also supported;
-  other major versions are not. Switch your shell's runtime before continuing.
+- **Node.js 24 and its matching npm**, as specified in
+  [.node-version](./.node-version). Other major versions are not supported.
+  Switch your shell's runtime before continuing.
 - An existing Fabric workspace with suitable capacity, Fabric Apps available
   in the tenant, and permission to create or update an app there. Ask your
   Fabric administrator to confirm these. The installer does not create a

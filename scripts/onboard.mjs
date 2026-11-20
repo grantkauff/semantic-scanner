@@ -35,9 +35,9 @@ function object(value) {
 }
 
 export function assertSupportedNode(version = process.versions.node) {
-  const [major, minor] = version.split('.').map(Number);
-  if (!(major === 24 || (major === 22 && minor >= 13))) {
-    throw new Error('Use Node.js 24 LTS, or Node.js 22.13+ within 22.x, with its matching npm. Switch runtimes before retrying.');
+  const [major] = version.split('.').map(Number);
+  if (major !== 24) {
+    throw new Error('Use Node.js 24.x with its matching npm. Switch runtimes before retrying.');
   }
 }
 

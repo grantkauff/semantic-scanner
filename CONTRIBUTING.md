@@ -7,8 +7,8 @@ AI assistant, Copilot, an MCP server, or an AI subscription.
 
 ## Safe local development
 
-Use Node.js 24 and its matching npm from the workspace root. Node.js 22.13+
-within 22.x is also supported. Do not rely on an outer runtime wrapper while
+Use Node.js 24 and its matching npm from the workspace root. Other major
+versions are not supported. Do not rely on an outer runtime wrapper while
 nested npm still resolves an unsupported global Node.
 
 ```powershell
@@ -70,13 +70,31 @@ build share project outputs and must not run concurrently.
 
 Root tests include installer/target safeguards, actual safe-development
 argument forwarding, blocked noninteractive deployment, and the frontend
-suite. Frontend cases cover paginated discovery, personal workspaces,
+suite. Command-contract tests copy the real scripts into temporary projects,
+use synthetic settings and private npm configuration, and replace Vite and the
+Fabric CLI with recording fakes. They must not use a developer's deployment
+state, credential cache, or running servers.
+
+Frontend cases cover paginated discovery, personal workspaces,
 untrusted continuations, partial failures, multi-workspace selection, manual
 scans, stopped queues, stale account/session completions, hidden-parent scope,
 whitespace, the exact 2,000-object bound, incomplete responses, and readiness
 interpretation. Recognized positive/negative instruction-content cases are
 regressions; the empty-metadata query shape was also exercised on the pilot.
+The DAX authentication cases exercise the installed SDK against mocked HTTP,
+including rejected sessions and account changes during a request.
 Fixtures do not establish another tenant's live permissions.
+
+The unused settings-draft form and generic managed-connector query hook retain
+their tests in a separate opt-in suite:
+
+```powershell
+npm run test:optional
+```
+
+Run it when changing those retained helpers. It is not part of `npm test` or
+the deployment gate. Both frontend suites fail when no matching tests are
+found; do not enable empty-suite success to bypass a missing test selection.
 
 On resource-constrained systems, the existing test commands can bound Vitest:
 
@@ -89,8 +107,10 @@ with incomplete/partial coverage is not a full visual pass: exercise
 runtime-built charts and inspect the console. No persistence CRUD checks apply
 while the scanner owns no records. See the [app-validation guide](./.agents/skills/app-validation/SKILL.md)
 for browser coverage, including protected/restored and actual embedded behavior.
+Unit-test popup and visual mocks do not replace checking sign-in and real
+chart rendering in the browser.
 
-CI checks Windows/Linux with Node 22/24. It installs without lifecycle scripts,
+CI checks Windows/Linux with Node 24. It installs without lifecycle scripts,
 runs the gates, and then exercises noninteractive local setup and local doctor
 with clearly synthetic test IDs. It needs no Fabric or AI credentials and
 does not log in, deploy, grant consent, or prove source access.
