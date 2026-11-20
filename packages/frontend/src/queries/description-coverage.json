@@ -1,0 +1,35 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "Described and missing eligible objects in successfully inspected semantic-model metadata.",
+  "width": "container",
+  "height": "container",
+  "mark": "bar",
+  "encoding": {
+    "y": {
+      "field": "ObjectType",
+      "type": "nominal",
+      "sort": ["Tables", "Columns", "Measures"],
+      "axis": { "title": null }
+    },
+    "x": {
+      "field": "Coverage",
+      "type": "quantitative",
+      "stack": "zero",
+      "scale": { "domain": [0, 1] },
+      "axis": { "title": "Share of eligible objects" }
+    },
+    "color": {
+      "field": "Status",
+      "type": "nominal",
+      "scale": { "domain": ["Described", "Missing"] },
+      "legend": { "title": null }
+    },
+    "order": { "field": "StatusOrder", "type": "quantitative", "sort": "ascending" },
+    "tooltip": [
+      { "field": "ObjectType", "type": "nominal", "title": "Object type" },
+      { "field": "Status", "type": "nominal" },
+      { "field": "Count", "type": "quantitative" },
+      { "field": "Total", "type": "quantitative", "title": "Eligible objects" }
+    ]
+  }
+}

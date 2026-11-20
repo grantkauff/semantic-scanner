@@ -1,0 +1,11 @@
+apiVersion: v1
+metadata:
+  name: semantic-scanner
+  displayName: Fabric Semantic Scanner
+  description: >-
+    A protected, read-only scanner for semantic-model descriptions and
+    AI-instruction presence. Deploy into your own Fabric workspace and
+    discover models through each connected user's delegated access.
+entries:
+  - path: .
+    name: semantic-scanner

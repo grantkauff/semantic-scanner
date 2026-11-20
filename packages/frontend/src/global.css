@@ -1,0 +1,218 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Bridged tokens — kept in `@theme static` so the CSS vars are always
+   emitted, not tree-shaken when no Tailwind utility consumes them.
+   Required because <VegaVisual> and <DataGrid> read these at runtime via
+   `useCssTheme()` and project them into a JS theme object (Vega's SVG output
+   cannot resolve `var()` references). */
+@theme static {
+  --color-brand: #087f6d;
+  --color-brand-foreground: #087362;
+  --color-hover: #edf4ef;
+}
+
+@theme {
+  /* Color tokens — light theme
+     Usage: bg-*, text-*, border-* (e.g. bg-primary text-primary-foreground)
+     Each token has a -foreground pair for text on that surface. */
+  --color-background: #f5f7f4; /* page background */
+  --color-foreground: #1b302c; /* default text */
+
+  --color-card: #ffffff; /* card surfaces */
+  --color-card-foreground: #1b302c;
+
+  --color-popover: #ffffff; /* popover/dropdown surfaces */
+  --color-popover-foreground: #1b302c;
+
+  --color-primary: #087362; /* primary actions & buttons */
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #e5eee7; /* secondary actions */
+  --color-secondary-foreground: #23483c;
+
+  --color-muted: #edf1ec; /* subtle backgrounds */
+  --color-muted-foreground: #576b64; /* subdued text */
+
+  --color-accent: #e9f4ed; /* accent highlights */
+  --color-accent-foreground: #155444;
+
+  --color-destructive: #c50f1f; /* errors & destructive actions */
+  --color-destructive-foreground: #ffffff;
+
+  --color-border: #d9e3dc; /* default border */
+  --color-input: #c4d2c8; /* input field borders */
+  --color-ring: #087362; /* focus rings */
+  --color-sidebar: #12352d;
+  --color-sidebar-foreground: #e6f4eb;
+  --color-sidebar-muted: #b2cbbd;
+  --color-sidebar-accent: #264f41;
+  --color-warning: #fff3d9;
+  --color-warning-foreground: #775114;
+  --color-review: #efedf8;
+  --color-review-foreground: #5c4ba4;
+
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 12px;
+  --radius-3xl: 16px;
+  --radius-4xl: 24px;
+  --radius-5xl: 32px;
+  --radius-6xl: 40px;
+  --radius-full: 9999px;
+  --radius: 12px;
+  --container-content: 1280px;
+  --container-setup: 720px;
+  --container-model-details: 520px;
+  --spacing-sidebar: 248px;
+  --spacing-control: 40px;
+  --spacing-empty: 180px;
+  --spacing-page: 40px;
+  --spacing-coverage-chart: 360px;
+
+  /* Spacing — 4px grid; use only these tokens, no interpolation. *-nudge = base − 2px.
+     Usage: p-*, m-*, gap-* (e.g. p-400 gap-300) */
+  --spacing-none: 0;
+  --spacing-100-nudge: 2px;
+  --spacing-100: 4px;
+  --spacing-200-nudge: 6px;
+  --spacing-200: 8px;
+  --spacing-300-nudge: 10px;
+  --spacing-300: 12px;
+  --spacing-400: 16px;
+  --spacing-500: 20px;
+  --spacing-600: 24px;
+  --spacing-700: 28px;
+  --spacing-800: 32px;
+
+  /* Font Sizes — 100-based scale 
+     Usage: text-* (e.g. text-300, text-hero-900) */
+  --text-100: 10px;
+  --text-200: 12px;
+  --text-300: 14px;
+  --text-400: 16px;
+  --text-500: 20px;
+  --text-600: 24px;
+  --text-hero-700: 28px;
+  --text-hero-800: 32px;
+  --text-hero-900: 40px;
+  --text-hero-1000: 68px;
+
+  /* Line Heights — paired with font sizes
+     Usage: leading-* (e.g. leading-300) */
+  --leading-100: 14px;
+  --leading-200: 16px;
+  --leading-300: 20px;
+  --leading-400: 22px;
+  --leading-500: 28px;
+  --leading-600: 32px;
+  --leading-hero-700: 36px;
+  --leading-hero-800: 40px;
+  --leading-hero-900: 52px;
+  --leading-hero-1000: 92px;
+
+  /* Font Weights
+     Usage: font-* (e.g. font-semibold) */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Font Families
+     Usage: font-* (e.g. font-heading, font-base) */
+  --font-heading: Bahnschrift, 'Aptos Display', 'Segoe UI', sans-serif;
+  --font-base: Aptos, 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  --font-monospace: 'Cascadia Code', Consolas, monospace;
+  --font-numeric: Bahnschrift, 'Segoe UI', sans-serif;
+
+  /* Icon Sizes — 100-based scale
+     Usage: icon-size-* custom utility (e.g. icon-size-200) */
+  --icon-size-100: 12px;
+  --icon-size-200: 16px;
+  --icon-size-300: 20px;
+  --icon-size-400: 24px;
+  --icon-size-500: 28px;
+  --icon-size-600: 32px;
+  --icon-size-700: 48px;
+}
+
+@utility icon-size-* {
+  width: --value(--icon-size-*);
+  height: --value(--icon-size-*);
+}
+
+@layer base {
+  .dark {
+    /* Color tokens — dark theme */
+    --color-background: #101f1b;
+    --color-foreground: #e3eee6;
+
+    --color-card: #192d25;
+    --color-card-foreground: #e3eee6;
+
+    --color-popover: #192d25;
+    --color-popover-foreground: #e3eee6;
+
+    --color-primary: #8cd9b4;
+    --color-primary-foreground: #112e23;
+
+    --color-secondary: #243f31;
+    --color-secondary-foreground: #d4eadb;
+
+    --color-muted: #20372c;
+    --color-muted-foreground: #b0c5b7;
+
+    --color-accent: #244535;
+    --color-accent-foreground: #c0e8d0;
+
+    --color-destructive: #ff9a9e;
+    --color-destructive-foreground: #34181c;
+
+    --color-border: #375346;
+    --color-input: #4a6856;
+    --color-ring: #8cd9b4;
+    --color-sidebar: #0b1c16;
+    --color-sidebar-foreground: #e6f4eb;
+    --color-sidebar-muted: #b2cbbd;
+    --color-sidebar-accent: #264f41;
+    --color-warning: #3c301c;
+    --color-warning-foreground: #f0d195;
+    --color-review: #302d45;
+    --color-review-foreground: #d2c5ff;
+
+    --color-brand: #8cd9b4;
+    --color-brand-foreground: #8cd9b4;
+    --color-hover: #244535;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background font-base text-300 leading-300 text-foreground antialiased;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}

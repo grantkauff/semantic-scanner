@@ -1,0 +1,42 @@
+DEFINE
+    VAR __DescriptionObjects =
+        UNION(
+            SELECTCOLUMNS(
+                INFO.VIEW.TABLES(),
+                "ObjectType", "Table",
+                "TableName", [Name],
+                "ObjectName", [Name],
+                "Description", [Description],
+                "IsHidden", [IsHidden]
+            ),
+            SELECTCOLUMNS(
+                INFO.VIEW.COLUMNS(),
+                "ObjectType", "Column",
+                "TableName", [Table],
+                "ObjectName", [Name],
+                "Description", [Description],
+                "IsHidden", [IsHidden]
+            ),
+            SELECTCOLUMNS(
+                INFO.VIEW.MEASURES(),
+                "ObjectType", "Measure",
+                "TableName", [Table],
+                "ObjectName", [Name],
+                "Description", [Description],
+                "IsHidden", [IsHidden]
+            )
+        )
+
+EVALUATE
+    ADDCOLUMNS(
+        TOPN(
+            2001,
+            __DescriptionObjects,
+            [ObjectType], ASC,
+            [TableName], ASC,
+            [ObjectName], ASC
+        ),
+        "ExpectedObjectCount", COUNTROWS(__DescriptionObjects)
+    )
+
+ORDER BY [ObjectType] ASC, [TableName] ASC, [ObjectName] ASC

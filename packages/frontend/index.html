@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/scanner.svg" />
+    <meta name="description" content="Evidence-backed documentation and AI-readiness insights for Fabric semantic models." />
+    <title>Semantic scanner</title>
+    <!-- Start fetching runtime config in parallel with the app bundle; resolveRayfinConfig() reuses this response. -->
+    <link rel="preload" href="/rayfin.config.json" as="fetch" crossorigin />
+  </head>
+
+  <body>
+    <noscript>Semantic scanner requires JavaScript. No model data is available without an authenticated Fabric session.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
