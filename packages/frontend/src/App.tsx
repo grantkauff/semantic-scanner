@@ -222,7 +222,7 @@ export default function App() {
         <div className="mx-auto flex max-w-content items-center justify-between gap-400">
           <div className="flex items-center gap-300">
             <ScanLine aria-hidden="true" className="icon-size-500 text-primary" />
-            <div><p className="font-heading text-500 leading-500">semantic scanner</p><p className="text-200 text-muted-foreground">Workspace scanning</p></div>
+            <p className="font-heading text-500 leading-500">semantic scanner</p>
           </div>
           <div className="flex items-center gap-300">
             <button type="button" aria-label={isDark ? 'Use light theme' : 'Use dark theme'} onClick={toggleTheme} className="rounded-lg p-200 hover:bg-accent">
@@ -234,11 +234,10 @@ export default function App() {
       </header>
       <main id="scanner-content" className="mx-auto max-w-content space-y-600 p-500 md:p-800" tabIndex={-1}>
         <section className="rounded-2xl border border-border bg-card p-600 md:p-800">
-          <p className="text-200 font-semibold uppercase tracking-widest text-primary">Workspaces / Semantic models / Findings</p>
-          <div className="mt-300 flex flex-col justify-between gap-500 sm:flex-row sm:items-end">
+          <div className="flex flex-col justify-between gap-500 sm:flex-row sm:items-end">
             <div>
               <h1 className="font-heading text-hero-800 leading-hero-800">Scan semantic models</h1>
-              <p className="mt-300 max-w-prose text-muted-foreground">Discover all workspaces you can access, select semantic models, and check their descriptions in one place.</p>
+              <p className="mt-300 max-w-prose text-muted-foreground">Select semantic models to check descriptions and AI-instruction presence.</p>
             </div>
             <div className="shrink-0 space-y-300 sm:text-right">
               <p id="scan-selection" aria-live="polite" aria-atomic="true" className="text-200 text-muted-foreground">

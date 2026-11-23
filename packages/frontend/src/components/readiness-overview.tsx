@@ -278,8 +278,7 @@ export default function ReadinessOverview({ models, results }: { models: Semanti
     <div className="space-y-500">
       <section className="flex flex-col justify-between gap-300 md:flex-row md:items-end">
         <div>
-          <p className="text-200 font-semibold uppercase tracking-widest text-primary">Evidence, not a score</p>
-          <h2 className="mt-200 font-heading text-600 leading-600">AI readiness overview</h2>
+          <h2 className="font-heading text-600 leading-600">AI readiness overview</h2>
           <p className="mt-200 max-w-prose text-muted-foreground">Compare descriptions and AI instructions across your selected models. Presence checks do not certify AI accuracy.</p>
         </div>
         <p className="text-200 text-muted-foreground">{report.contributing} / {models.length} models inspected</p>
